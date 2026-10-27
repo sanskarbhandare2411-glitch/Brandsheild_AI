@@ -1,23 +1,32 @@
-from pydantic_settings import BaseSettings
+import os
 from pathlib import Path
+from pydantic_settings import BaseSettings
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "BrandShield AI"
     VERSION: str = "1.0.0"
-    ENVIRONMENT: str = "development"
-    SECRET_KEY: str = "brandshield-dev-secret-codex48"
-    
+    ENVIRONMENT: str = "production"
+    SECRET_KEY: str = os.environ.get(
+        "SECRET_KEY", "development-only-key"
+    )
+
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
-    DATABASE_URL: str = f"sqlite:///{BASE_DIR}/brandshield.db"
-    UPLOAD_DIR: Path = BASE_DIR / "uploads"
-    
-    # Feature flags & privacy
+
+    if os.environ.get("VERCEL"):
+        DATABASE_URL: str = "sqlite:////tmp/brandshield.db"
+        UPLOAD_DIR: Path = Path("/tmp/uploads")
+    else:
+        DATABASE_URL: str = f"sqlite:///{BASE_DIR}/brandshield.db"
+        UPLOAD_DIR: Path = BASE_DIR / "uploads"
+
     ENABLE_PII_REDACTION: bool = True
-    DEMO_MODE: bool = True  # Explicitly demarcates pre-populated mock records
+    DEMO_MODE: bool = True
 
     class Config:
         env_file = ".env"
         extra = "allow"
+
 
 settings = Settings()
 settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
