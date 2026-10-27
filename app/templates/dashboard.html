@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-7xl mx-auto">
+
+  <!-- Demo Notice Banner -->
+  {% if has_demo_data %}
+  <div class="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-start justify-between gap-3 text-amber-200">
+    <div class="flex items-start space-x-3">
+      <div class="p-1.5 bg-amber-500/20 rounded-lg text-amber-400 mt-0.5">
+        <i data-lucide="info" class="w-4 h-4"></i>
+      </div>
+      <div>
+        <h4 class="text-xs font-semibold text-amber-300">Demonstration Dataset Loaded</h4>
+        <p class="text-xs text-amber-200/80 mt-0.5">
+          Pre-populated sample submissions and claim checks are labeled with <span class="bg-amber-400/20 text-amber-300 px-1 py-0.5 rounded font-mono text-[10px]">DEMO BENCHMARK</span>. You can submit new live content anytime using the <strong>Submit New Content</strong> button above.
+        </p>
+      </div>
+    </div>
+    <span class="text-[10px] font-mono uppercase bg-amber-400/20 text-amber-300 px-2 py-1 rounded-md border border-amber-400/30 whitespace-nowrap">
+      Codex 48 Sandbox
+    </span>
+  </div>
+  {% endif %}
+
+  <!-- Top Hero / Context Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+        <span>Brand Governance Workspace</span>
+        <span>•</span>
+        <span class="text-indigo-400 font-medium">Phase 1: Navigation & Dashboard</span>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-white">Brand Governance Dashboard</h1>
+      <p class="text-xs text-slate-400 mt-1">Real-time claim verification, brand policy adherence, and approval workflows.</p>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <button 
+        @click="showSubmitModal = true"
+        class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/25 transition-all flex items-center space-x-2"
+      >
+        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        <span>Submit Content for Checking</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 4 Summary KPI Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Card 1: Content Reviewed -->
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700/80 transition-all">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-slate-400">Content Reviewed</span>
+        <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="mt-4 flex items-baseline space-x-2">
+        <span class="text-2xl font-bold text-white">{{ metrics.total_reviewed }}</span>
+        <span class="text-[11px] font-medium text-emerald-400 flex items-center">
+          <i data-lucide="trending-up" class="w-3 h-3 mr-0.5"></i> +14% this month
+        </span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-1">Total assets processed by pipeline</p>
+    </div>
+
+    <!-- Card 2: Pending Approvals -->
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700/80 transition-all">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-slate-400">Pending Approvals</span>
+        <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <i data-lucide="clock" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="mt-4 flex items-baseline space-x-2">
+        <span class="text-2xl font-bold text-white">{{ metrics.pending_approvals }}</span>
+        <span class="text-[11px] font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+          Awaiting Action
+        </span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-1">Human sign-off required</p>
+    </div>
+
+    <!-- Card 3: Detected Issues -->
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700/80 transition-all">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-slate-400">Detected Issues</span>
+        <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+          <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="mt-4 flex items-baseline space-x-2">
+        <span class="text-2xl font-bold text-white">{{ metrics.detected_issues }}</span>
+        <span class="text-[11px] font-medium text-rose-400">
+          Claim & tone alerts
+        </span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-1">Grounded in brand policy rules</p>
+    </div>
+
+    <!-- Card 4: Approved Content -->
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700/80 transition-all">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium text-slate-400">Approved Assets</span>
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+        </div>
+      </div>
+      <div class="mt-4 flex items-baseline space-x-2">
+        <span class="text-2xl font-bold text-white">{{ metrics.approved_content }}</span>
+        <span class="text-[11px] font-medium text-emerald-400">
+          {% if metrics.total_reviewed > 0 %}
+            {{ (metrics.approved_content / metrics.total_reviewed * 100) | round | int }}% pass rate
+          {% else %}
+            100%
+          {% endif %}
+        </span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-1">Cleared for live publication</p>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Left 2 Columns: Pipeline & Pending Reviews -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <!-- Pending Review List / Submissions Table -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
+        <div class="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+            <h3 class="text-sm font-semibold text-white">Content Governance Pipeline</h3>
+            <span class="text-[11px] text-slate-400">({{ submissions | length }} items)</span>
+          </div>
+          <a href="/content" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center space-x-1">
+            <span>View All</span>
+            <i data-lucide="arrow-right" class="w-3 h-3"></i>
+          </a>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800/80 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/40">
+                <th class="py-3 px-6 font-medium">Asset / Campaign</th>
+                <th class="py-3 px-4 font-medium">Channel</th>
+                <th class="py-3 px-4 font-medium">Author</th>
+                <th class="py-3 px-4 font-medium">Compliance</th>
+                <th class="py-3 px-4 font-medium">Status</th>
+                <th class="py-3 px-6 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-xs">
+              {% for sub in submissions %}
+              <tr class="hover:bg-slate-800/30 transition-colors">
+                <!-- Title & Campaign -->
+                <td class="py-3.5 px-6">
+                  <div class="flex items-center space-x-2">
+                    <a href="/content/{{ sub.id }}?role={{ 'reviewer' if current_user.role.value == 'reviewer' else 'creator' }}" class="font-medium text-white hover:text-indigo-400 transition-colors truncate max-w-xs">
+                      {{ sub.title }}
+                    </a>
+                    {% if sub.is_demo %}
+                      <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">DEMO</span>
+                    {% endif %}
+                  </div>
+                  <span class="text-[11px] text-slate-400">{{ sub.campaign }}</span>
+                </td>
+
+                <!-- Channel -->
+                <td class="py-3.5 px-4 text-slate-300 whitespace-nowrap">
+                  <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-slate-800/80 text-slate-300 text-[11px] border border-slate-700/60">
+                    <span>{{ sub.channel }}</span>
+                  </span>
+                </td>
+
+                <!-- Author -->
+                <td class="py-3.5 px-4 text-slate-300 whitespace-nowrap">
+                  <div class="flex items-center space-x-1.5">
+                    <div class="w-5 h-5 rounded-full bg-slate-800 text-[10px] text-slate-300 flex items-center justify-center font-bold">
+                      {{ sub.author_name[0] }}
+                    </div>
+                    <span>{{ sub.author_name }}</span>
+                  </div>
+                </td>
+
+                <!-- Compliance Score -->
+                <td class="py-3.5 px-4 whitespace-nowrap">
+                  {% if sub.compliance_score is not none %}
+                    <div class="flex items-center space-x-2">
+                      <div class="w-12 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div 
+                          class="h-full rounded-full {% if sub.compliance_score >= 90 %}bg-emerald-400{% elif sub.compliance_score >= 70 %}bg-amber-400{% else %}bg-rose-500{% endif %}" 
+                          style="width: {{ sub.compliance_score }}%"
+                        ></div>
+                      </div>
+                      <span class="font-semibold {% if sub.compliance_score >= 90 %}text-emerald-400{% elif sub.compliance_score >= 70 %}text-amber-400{% else %}text-rose-400{% endif %}">
+                        {{ sub.compliance_score }}%
+                      </span>
+                    </div>
+                  {% else %}
+                    <span class="text-slate-500 italic text-[11px]">Pending AI scan</span>
+                  {% endif %}
+                </td>
+
+                <!-- Status Badge -->
+                <td class="py-3.5 px-4 whitespace-nowrap">
+                  {% if sub.status == 'approved' %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <i data-lucide="check" class="w-3 h-3 mr-1"></i> Approved
+                    </span>
+                  {% elif sub.status == 'flagged' %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                      <i data-lucide="alert-triangle" class="w-3 h-3 mr-1"></i> 3 Issues Flagged
+                    </span>
+                  {% elif sub.status == 'pending_review' %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <i data-lucide="clock" class="w-3 h-3 mr-1"></i> In Review
+                    </span>
+                  {% elif sub.status == 'revision_requested' %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                      <i data-lucide="refresh-cw" class="w-3 h-3 mr-1"></i> Needs Revision
+                    </span>
+                  {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-800 text-slate-400">
+                      {{ sub.status }}
+                    </span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td class="py-3.5 px-6 text-right whitespace-nowrap">
+                  <a 
+                    href="/content/{{ sub.id }}?role={{ 'reviewer' if current_user.role.value == 'reviewer' else 'creator' }}" 
+                    class="inline-flex items-center space-x-1 px-2.5 py-1 text-[11px] font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow transition-colors"
+                  >
+                    <span>Audit Finding</span>
+                    <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                  </a>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="6" class="py-8 text-center text-slate-500">
+                  No submissions found. Click "Submit Content for Checking" to evaluate your first copy!
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Evidence-Linked Issue Breakdown (Demonstration Spotlight) -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+              <i data-lucide="file-warning" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-white">Active Compliance Flags & Evidence Citations</h3>
+              <p class="text-xs text-slate-400">How BrandShield AI links detected issues to specific brand governance clauses</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+            DEMO AUDIT CASE
+          </span>
+        </div>
+
+        <div class="space-y-3">
+          <!-- Flag Item 1 -->
+          <div class="bg-slate-950/70 border border-rose-500/20 rounded-xl p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                    Critical Policy Breach
+                  </span>
+                  <span class="text-xs font-semibold text-white">Unsubstantiated Security Absolute</span>
+                </div>
+                <p class="text-xs text-slate-300 pt-1">
+                  Claimed phrase: <code class="text-rose-300 bg-rose-950/40 px-1 py-0.5 rounded font-mono">"100% unbreakable security"</code>
+                </p>
+                <p class="text-xs text-slate-400">
+                  <strong>Explanation:</strong> Absolute security claims violate Section 2.1 of Legal Claims Policy. Absolute immunity cannot be legally guaranteed.
+                </p>
+              </div>
+              <span class="text-[11px] text-slate-400 font-mono whitespace-nowrap bg-slate-900 px-2 py-1 rounded border border-slate-800">
+                §2.1 Claims Policy
+              </span>
+            </div>
+            <!-- Suggested Replacement -->
+            <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-start space-x-2 text-xs">
+              <span class="text-emerald-400 font-semibold flex items-center shrink-0">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i> Suggested Fix:
+              </span>
+              <span class="text-slate-200 bg-emerald-950/30 border border-emerald-500/20 px-2 py-0.5 rounded text-[11px]">
+                "military-grade multi-layer defense with zero recorded perimeter breaches"
+              </span>
+            </div>
+          </div>
+
+          <!-- Flag Item 2 -->
+          <div class="bg-slate-950/70 border border-amber-500/20 rounded-xl p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    Unsupported Metric
+                  </span>
+                  <span class="text-xs font-semibold text-white">Unverified Financial Superlative</span>
+                </div>
+                <p class="text-xs text-slate-300 pt-1">
+                  Claimed phrase: <code class="text-amber-300 bg-amber-950/40 px-1 py-0.5 rounded font-mono">"cuts all operational costs in half guaranteed"</code>
+                </p>
+                <p class="text-xs text-slate-400">
+                  <strong>Explanation:</strong> Approved asset benchmark supports "reduces governance latency by up to 42%", not "cuts all costs in half guaranteed".
+                </p>
+              </div>
+              <span class="text-[11px] text-slate-400 font-mono whitespace-nowrap bg-slate-900 px-2 py-1 rounded border border-slate-800">
+                Asset Benchmark #2026-42
+              </span>
+            </div>
+            <!-- Suggested Replacement -->
+            <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-start space-x-2 text-xs">
+              <span class="text-emerald-400 font-semibold flex items-center shrink-0">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i> Suggested Fix:
+              </span>
+              <span class="text-slate-200 bg-emerald-950/30 border border-emerald-500/20 px-2 py-0.5 rounded text-[11px]">
+                "delivers significant operational efficiency with verified savings up to 42%"
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right 1 Column: Activity Feed, Brand Memory & System Health -->
+    <div class="space-y-6">
+
+      <!-- Recent Governance Activity -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i>
+            <h3 class="text-sm font-semibold text-white">Recent Activity</h3>
+          </div>
+          <span class="text-[10px] text-slate-400">Live Audit Log</span>
+        </div>
+
+        <div class="relative pl-4 space-y-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+          {% for log in recent_activity %}
+          <div class="relative flex items-start space-x-3">
+            <div class="absolute -left-4 mt-1 w-2.5 h-2.5 rounded-full border-2 border-slate-900 bg-indigo-500"></div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs text-slate-200 leading-snug">
+                <strong class="text-white">{{ log.user_name }}</strong> 
+                <span class="text-slate-400">{{ log.action }}</span> 
+                <span class="text-indigo-300 font-medium truncate block">{{ log.target_title }}</span>
+              </p>
+              <span class="text-[10px] text-slate-500 mt-0.5 block">
+                {{ log.timestamp.strftime('%H:%M • %b %d') }}
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Active Brand Guidelines (Brand Memory Widget) -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="book-marked" class="w-4 h-4 text-indigo-400"></i>
+            <h3 class="text-sm font-semibold text-white">Active Brand Memory</h3>
+          </div>
+          <a href="/brand-memory" class="text-xs text-indigo-400 hover:text-indigo-300">View All</a>
+        </div>
+        <p class="text-xs text-slate-400 mb-3">Loaded guideline policies governing content checks:</p>
+
+        <div class="space-y-2">
+          {% for guide in active_guidelines %}
+          <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex items-center justify-between">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-white truncate">{{ guide.title }}</p>
+              <div class="flex items-center space-x-2 text-[10px] text-slate-400 mt-0.5">
+                <span class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">v{{ guide.version }}</span>
+                <span>•</span>
+                <span>{{ guide.rules_count }} enforced rules</span>
+              </div>
+            </div>
+            <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Privacy & System Trust Badge -->
+      <div class="bg-gradient-to-br from-indigo-950/40 to-slate-900/60 border border-indigo-500/20 rounded-2xl p-4">
+        <div class="flex items-center space-x-2.5 text-indigo-300 mb-1.5">
+          <i data-lucide="lock" class="w-4 h-4"></i>
+          <span class="text-xs font-semibold">Zero-Retention Privacy Guarantee</span>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          BrandShield evaluates documents in ephemeral isolated sessions. Content is never stored into third-party foundation model training sets.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

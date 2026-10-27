@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Assets & Approved Claims{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-7xl mx-auto">
+  <div class="flex items-center justify-between">
+    <div>
+      <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+        <a href="/" class="hover:text-slate-200">Dashboard</a>
+        <span>•</span>
+        <span class="text-indigo-400 font-medium">Assets</span>
+      </div>
+      <h1 class="text-2xl font-bold text-white">Approved Asset & Claim Library</h1>
+      <p class="text-xs text-slate-400 mt-1">Legally substantiated statements, benchmark metrics, and authorized promotional assets.</p>
+    </div>
+
+    <a 
+      href="/brand-memory?tab=claims&role={{ 'reviewer' if current_user.role.value == 'reviewer' else 'creator' }}"
+      class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow transition-all flex items-center space-x-1.5"
+    >
+      <i data-lucide="plus-circle" class="w-4 h-4"></i>
+      <span>Manage in Brand Memory</span>
+    </a>
+  </div>
+
+  <!-- Verified Claims Section -->
+  <div class="space-y-3">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-white flex items-center space-x-2">
+        <i data-lucide="badge-check" class="w-4 h-4 text-emerald-400"></i>
+        <span>Verified Marketing Claims ({{ claims | length }})</span>
+      </h3>
+      <a href="/brand-memory?tab=claims" class="text-xs text-indigo-400 hover:text-indigo-300">Open Claims Governance</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for c in claims %}
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 shadow-xl space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            {{ c.topic }}
+          </span>
+          <span class="text-[11px] text-slate-400 font-mono">{{ c.verification_status.value | upper }}</span>
+        </div>
+
+        <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 font-medium">
+          "{{ c.claim_statement }}"
+        </div>
+
+        <div class="text-[11px] text-slate-400 flex items-center justify-between pt-1">
+          <span class="truncate">Evidence: <strong class="text-slate-300">{{ c.source_reference }}</strong></span>
+          <span>By: {{ c.verified_by }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Brand Assets & Logos Section -->
+  <div class="space-y-3 pt-4">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-white flex items-center space-x-2">
+        <i data-lucide="image" class="w-4 h-4 text-indigo-400"></i>
+        <span>Registered Brand Assets & Guidelines ({{ assets | length }})</span>
+      </h3>
+      <a href="/brand-memory?tab=assets" class="text-xs text-indigo-400 hover:text-indigo-300">Open Asset Specs</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {% for a in assets %}
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-3">
+        <div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mb-2 inline-block">
+            {{ a.category }}
+          </span>
+          <h4 class="text-sm font-semibold text-white mb-1">{{ a.name }}</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">{{ a.usage_guidelines }}</p>
+        </div>
+
+        {% if a.attribution_text %}
+        <p class="text-[11px] text-slate-400 italic pt-2 border-t border-slate-800/80">
+          "{{ a.attribution_text }}"
+        </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

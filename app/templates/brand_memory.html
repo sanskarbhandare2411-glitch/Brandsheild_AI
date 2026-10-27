@@ -1,0 +1,850 @@
+{% extends "base.html" %}
+
+{% block title %}Brand Memory Governance{% endblock %}
+
+{% block content %}
+<div 
+  x-data="{
+    activeTab: '{{ current_memory_tab }}',
+    showVoiceModal: false,
+    showTermModal: false,
+    showFactModal: false,
+    showClaimModal: false,
+    showAssetModal: false,
+    editClaimModal: false,
+    activeEditClaim: null
+  }"
+  class="space-y-6 max-w-7xl mx-auto"
+>
+  <!-- Flash Message Banner -->
+  {% if msg %}
+  <div class="rounded-xl p-4 flex items-center justify-between text-xs font-medium 
+    {% if msg_type == 'success' %}bg-emerald-500/10 border border-emerald-500/20 text-emerald-300
+    {% elif msg_type == 'error' %}bg-rose-500/10 border border-rose-500/20 text-rose-300
+    {% else %}bg-indigo-500/10 border border-indigo-500/20 text-indigo-300{% endif %}"
+  >
+    <div class="flex items-center space-x-2.5">
+      <i data-lucide="{% if msg_type == 'success' %}check-circle{% elif msg_type == 'error' %}alert-octagon{% else %}info{% endif %}" class="w-4 h-4"></i>
+      <span>{{ msg }}</span>
+    </div>
+    <a href="/brand-memory?tab={{ current_memory_tab }}&role={{ 'reviewer' if is_reviewer else 'creator' }}" class="text-slate-400 hover:text-white">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+        <a href="/" class="hover:text-slate-200">Dashboard</a>
+        <span>•</span>
+        <span class="text-indigo-400 font-medium">Brand Memory</span>
+      </div>
+      <h1 class="text-2xl font-bold text-white tracking-tight">Brand Memory & Guideline Governance</h1>
+      <p class="text-xs text-slate-400 mt-1">
+        Canonical source of brand voice, substantiated claims, terminology policies, and specifications.
+      </p>
+    </div>
+
+    <!-- Role Context & Action Button -->
+    <div class="flex items-center space-x-3">
+      {% if is_reviewer %}
+        <span class="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+          <span>Governance Admin Access</span>
+        </span>
+      {% else %}
+        <span class="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-sky-500/10 text-sky-300 border border-sky-500/20">
+          <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+          <span>Creator (Read & Propose)</span>
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Segmented Navigation Tabs -->
+  <div class="border-b border-slate-800 flex items-center justify-between gap-4 overflow-x-auto">
+    <div class="flex space-x-2 pb-1">
+      <!-- Tab 1: Voice & Tone -->
+      <a 
+        href="/brand-memory?tab=voice&role={{ 'reviewer' if is_reviewer else 'creator' }}"
+        class="flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-xl transition-all whitespace-nowrap {% if current_memory_tab == 'voice' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-900{% endif %}"
+      >
+        <i data-lucide="mic" class="w-4 h-4"></i>
+        <span>Voice & Tone</span>
+        <span class="text-[10px] px-1.5 py-0.2 rounded-full {% if current_memory_tab == 'voice' %}bg-white/20 text-white{% else %}bg-slate-800 text-slate-400{% endif %}">
+          {{ counts.voice }}
+        </span>
+      </a>
+
+      <!-- Tab 2: Terminology Rules -->
+      <a 
+        href="/brand-memory?tab=terms&role={{ 'reviewer' if is_reviewer else 'creator' }}"
+        class="flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-xl transition-all whitespace-nowrap {% if current_memory_tab == 'terms' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-900{% endif %}"
+      >
+        <i data-lucide="spell-check" class="w-4 h-4"></i>
+        <span>Terminology Rules</span>
+        <span class="text-[10px] px-1.5 py-0.2 rounded-full {% if current_memory_tab == 'terms' %}bg-white/20 text-white{% else %}bg-slate-800 text-slate-400{% endif %}">
+          {{ counts.terms }}
+        </span>
+      </a>
+
+      <!-- Tab 3: Product Facts & Specs -->
+      <a 
+        href="/brand-memory?tab=facts&role={{ 'reviewer' if is_reviewer else 'creator' }}"
+        class="flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-xl transition-all whitespace-nowrap {% if current_memory_tab == 'facts' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-900{% endif %}"
+      >
+        <i data-lucide="cpu" class="w-4 h-4"></i>
+        <span>Product Facts & Specs</span>
+        <span class="text-[10px] px-1.5 py-0.2 rounded-full {% if current_memory_tab == 'facts' %}bg-white/20 text-white{% else %}bg-slate-800 text-slate-400{% endif %}">
+          {{ counts.facts }}
+        </span>
+      </a>
+
+      <!-- Tab 4: Approved Claims -->
+      <a 
+        href="/brand-memory?tab=claims&role={{ 'reviewer' if is_reviewer else 'creator' }}"
+        class="flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-xl transition-all whitespace-nowrap {% if current_memory_tab == 'claims' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-900{% endif %}"
+      >
+        <i data-lucide="badge-check" class="w-4 h-4"></i>
+        <span>Approved Claims Library</span>
+        <span class="text-[10px] px-1.5 py-0.2 rounded-full {% if current_memory_tab == 'claims' %}bg-white/20 text-white{% else %}bg-slate-800 text-slate-400{% endif %}">
+          {{ counts.claims }}
+        </span>
+      </a>
+
+      <!-- Tab 5: Brand Asset References -->
+      <a 
+        href="/brand-memory?tab=assets&role={{ 'reviewer' if is_reviewer else 'creator' }}"
+        class="flex items-center space-x-2 px-4 py-2.5 text-xs font-medium rounded-xl transition-all whitespace-nowrap {% if current_memory_tab == 'assets' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-900{% endif %}"
+      >
+        <i data-lucide="image" class="w-4 h-4"></i>
+        <span>Brand Assets & Logos</span>
+        <span class="text-[10px] px-1.5 py-0.2 rounded-full {% if current_memory_tab == 'assets' %}bg-white/20 text-white{% else %}bg-slate-800 text-slate-400{% endif %}">
+          {{ counts.assets }}
+        </span>
+      </a>
+    </div>
+
+    <!-- Primary Action Button by Tab -->
+    <div class="pb-1 shrink-0">
+      {% if current_memory_tab == 'voice' and is_reviewer %}
+        <button @click="showVoiceModal = true" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-xl shadow transition-all">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Voice Guideline</span>
+        </button>
+      {% elif current_memory_tab == 'terms' and is_reviewer %}
+        <button @click="showTermModal = true" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-xl shadow transition-all">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Terminology Rule</span>
+        </button>
+      {% elif current_memory_tab == 'facts' and is_reviewer %}
+        <button @click="showFactModal = true" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-xl shadow transition-all">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Product Fact</span>
+        </button>
+      {% elif current_memory_tab == 'claims' %}
+        <button @click="showClaimModal = true" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-xl shadow transition-all">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>{% if is_reviewer %}Add Verified Claim{% else %}Propose Claim for Review{% endif %}</span>
+        </button>
+      {% elif current_memory_tab == 'assets' and is_reviewer %}
+        <button @click="showAssetModal = true" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-xl shadow transition-all">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Asset Reference</span>
+        </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Search Filter -->
+  <div class="flex items-center justify-between gap-4">
+    <form action="/brand-memory" method="GET" class="relative flex-1 max-w-md">
+      <input type="hidden" name="tab" value="{{ current_memory_tab }}" />
+      <input type="hidden" name="role" value="{{ 'reviewer' if is_reviewer else 'creator' }}" />
+      <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+      <input 
+        type="text" 
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Filter records in {{ current_memory_tab }}..." 
+        class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+      />
+    </form>
+    {% if search_query %}
+      <a href="/brand-memory?tab={{ current_memory_tab }}&role={{ 'reviewer' if is_reviewer else 'creator' }}" class="text-xs text-indigo-400 hover:text-indigo-300">
+        Clear filter
+      </a>
+    {% endif %}
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- TAB 1: VOICE & TONE GUIDELINES -->
+  <!-- ========================================================= -->
+  {% if current_memory_tab == 'voice' %}
+  <div class="space-y-4">
+    {% for v in voice_guidelines %}
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-800/80 pb-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <h3 class="text-base font-semibold text-white">{{ v.title }}</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+              Active Voice Model
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Target Audience: <strong class="text-slate-300">{{ v.audience }}</strong></p>
+        </div>
+
+        {% if is_reviewer %}
+        <div class="flex items-center space-x-2">
+          <form action="/brand-memory/voice/{{ v.id }}/delete" method="POST" onsubmit="return confirm('Delete this voice guideline?');">
+            <input type="hidden" name="role" value="reviewer" />
+            <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Tone Attributes -->
+      <div class="flex items-center space-x-2 text-xs">
+        <span class="text-slate-400 font-medium">Core Tone Pillars:</span>
+        <div class="flex flex-wrap gap-1.5">
+          {% for pillar in v.tone_attributes.split(',') %}
+          <span class="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium text-[11px]">
+            {{ pillar.strip() }}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Do's and Don'ts Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- DOs -->
+        <div class="bg-slate-950/60 border border-emerald-500/20 rounded-xl p-4 space-y-2">
+          <div class="flex items-center space-x-1.5 text-xs font-semibold text-emerald-400">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>Recommended Principles (DO)</span>
+          </div>
+          <p class="text-xs text-slate-300 whitespace-pre-line leading-relaxed">{{ v.dos_principles }}</p>
+        </div>
+
+        <!-- DONTs -->
+        <div class="bg-slate-950/60 border border-rose-500/20 rounded-xl p-4 space-y-2">
+          <div class="flex items-center space-x-1.5 text-xs font-semibold text-rose-400">
+            <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+            <span>Forbidden Voice Patterns (DON'T)</span>
+          </div>
+          <p class="text-xs text-slate-300 whitespace-pre-line leading-relaxed">{{ v.donts_principles }}</p>
+        </div>
+      </div>
+
+      <!-- Real World Examples -->
+      {% if v.example_positive or v.example_negative %}
+      <div class="pt-2 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        {% if v.example_positive %}
+        <div class="p-3 bg-emerald-950/20 border border-emerald-500/10 rounded-xl space-y-1">
+          <span class="text-[10px] uppercase font-bold text-emerald-400">Approved Example Phrasing</span>
+          <p class="text-slate-300 italic">"{{ v.example_positive }}"</p>
+        </div>
+        {% endif %}
+        {% if v.example_negative %}
+        <div class="p-3 bg-rose-950/20 border border-rose-500/10 rounded-xl space-y-1">
+          <span class="text-[10px] uppercase font-bold text-rose-400">Disallowed Example Phrasing</span>
+          <p class="text-slate-300 italic line-through">"{{ v.example_negative }}"</p>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
+      <i data-lucide="mic-off" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
+      <p class="text-sm font-medium text-white">No voice & tone guidelines match your search.</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ========================================================= -->
+  <!-- TAB 2: TERMINOLOGY RULES -->
+  <!-- ========================================================= -->
+  {% if current_memory_tab == 'terms' %}
+  <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-slate-800/80 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/40">
+            <th class="py-3 px-6 font-medium">Term / Phrase</th>
+            <th class="py-3 px-4 font-medium">Rule Type</th>
+            <th class="py-3 px-4 font-medium">Approved Replacement</th>
+            <th class="py-3 px-4 font-medium">Category</th>
+            <th class="py-3 px-4 font-medium">Policy Rationale</th>
+            {% if is_reviewer %}<th class="py-3 px-6 font-medium text-right">Actions</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60 text-xs">
+          {% for t in terms %}
+          <tr class="hover:bg-slate-800/30 transition-colors">
+            <!-- Term -->
+            <td class="py-3.5 px-6 font-semibold text-white whitespace-nowrap">
+              <code class="text-slate-100 bg-slate-950 px-2 py-1 rounded font-mono border border-slate-800">
+                "{{ t.term }}"
+              </code>
+            </td>
+
+            <!-- Rule Type -->
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              {% if t.term_type == 'prohibited' %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                  <i data-lucide="ban" class="w-3 h-3 mr-1"></i> PROHIBITED
+                </span>
+              {% elif t.term_type == 'approved' %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <i data-lucide="check" class="w-3 h-3 mr-1"></i> APPROVED
+                </span>
+              {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  CONDITIONAL
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Replacement -->
+            <td class="py-3.5 px-4 text-emerald-300">
+              {% if t.replacement_term %}
+                <span class="bg-emerald-950/40 border border-emerald-500/20 px-2 py-0.5 rounded font-medium">
+                  "{{ t.replacement_term }}"
+                </span>
+              {% else %}
+                <span class="text-slate-500 italic">None required</span>
+              {% endif %}
+            </td>
+
+            <!-- Category -->
+            <td class="py-3.5 px-4 text-slate-300 whitespace-nowrap">
+              <span class="text-[11px] bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                {{ t.category }}
+              </span>
+            </td>
+
+            <!-- Reason -->
+            <td class="py-3.5 px-4 text-slate-400 max-w-sm truncate">
+              {{ t.reason }}
+            </td>
+
+            <!-- Actions -->
+            {% if is_reviewer %}
+            <td class="py-3.5 px-6 text-right whitespace-nowrap">
+              <form action="/brand-memory/terms/{{ t.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Delete this terminology rule?');">
+                <input type="hidden" name="role" value="reviewer" />
+                <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="py-8 text-center text-slate-500">
+              No terminology rules found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ========================================================= -->
+  <!-- TAB 3: PRODUCT FACTS & SPECS -->
+  <!-- ========================================================= -->
+  {% if current_memory_tab == 'facts' %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for f in facts %}
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+            {{ f.category }}
+          </span>
+          <div class="flex items-center space-x-2">
+            <!-- Confidentiality Badge -->
+            {% if f.confidentiality.value == 'confidential' %}
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center space-x-1">
+                <i data-lucide="lock" class="w-3 h-3"></i>
+                <span>CONFIDENTIAL</span>
+              </span>
+            {% elif f.confidentiality.value == 'internal' %}
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center space-x-1">
+                <i data-lucide="shield" class="w-3 h-3"></i>
+                <span>INTERNAL ONLY</span>
+              </span>
+            {% else %}
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 flex items-center space-x-1">
+                <i data-lucide="globe" class="w-3 h-3"></i>
+                <span>PUBLIC</span>
+              </span>
+            {% endif %}
+
+            {% if is_reviewer %}
+            <form action="/brand-memory/facts/{{ f.id }}/delete" method="POST" onsubmit="return confirm('Delete this product fact?');">
+              <input type="hidden" name="role" value="reviewer" />
+              <button type="submit" class="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <h3 class="text-base font-semibold text-white">{{ f.feature_name }}</h3>
+        <p class="text-xs text-indigo-400 mb-2 font-medium">{{ f.product_name }}</p>
+
+        <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 leading-relaxed font-mono">
+          {{ f.specification_detail }}
+        </div>
+      </div>
+
+      <!-- Source Reference -->
+      <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+        <span class="truncate">Verified Source: <strong class="text-slate-300 font-mono">{{ f.verified_source }}</strong></span>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
+      <i data-lucide="cpu" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
+      <p class="text-sm font-medium text-white">No product facts registered.</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ========================================================= -->
+  <!-- TAB 4: APPROVED CLAIMS LIBRARY -->
+  <!-- ========================================================= -->
+  {% if current_memory_tab == 'claims' %}
+  <div class="space-y-4">
+    <div class="bg-indigo-950/30 border border-indigo-500/20 rounded-2xl p-4 flex items-center justify-between text-xs text-indigo-200">
+      <div class="flex items-center space-x-2.5">
+        <i data-lucide="shield-alert" class="w-4 h-4 text-indigo-400 shrink-0"></i>
+        <span><strong>Governance Rule:</strong> Claims require verified source citations and audit trail dates. Arbitrary copy is never treated as verified evidence without formal sign-off.</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4">
+      {% for c in claims %}
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-800/80 pb-3">
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 class="text-base font-semibold text-white">{{ c.topic }}</h3>
+              
+              <!-- Verification Status Badge -->
+              {% if c.verification_status.value == 'verified' %}
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-1">
+                  <i data-lucide="check-circle" class="w-3 h-3"></i>
+                  <span>VERIFIED CLAIM</span>
+                </span>
+              {% elif c.verification_status.value == 'pending_review' %}
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center space-x-1">
+                  <i data-lucide="clock" class="w-3 h-3"></i>
+                  <span>PENDING LEGAL AUDIT</span>
+                </span>
+              {% else %}
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                  {{ c.verification_status.value | upper }}
+                </span>
+              {% endif %}
+
+              {% if c.is_confidential %}
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center space-x-1">
+                  <i data-lucide="lock" class="w-2.5 h-2.5"></i>
+                  <span>RESTRICTED</span>
+                </span>
+              {% endif %}
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Evidence Type: <strong class="text-slate-300">{{ c.evidence_type }}</strong></p>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center space-x-2">
+            {% if is_reviewer and c.verification_status.value != 'verified' %}
+            <form action="/brand-memory/claims/{{ c.id }}/verify" method="POST" class="inline">
+              <input type="hidden" name="status" value="verified" />
+              <input type="hidden" name="role" value="reviewer" />
+              <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow transition-colors">
+                Verify & Approve Claim
+              </button>
+            </form>
+            {% endif %}
+
+            {% if is_reviewer %}
+            <form action="/brand-memory/claims/{{ c.id }}/delete" method="POST" onsubmit="return confirm('Remove this claim from the memory library?');">
+              <input type="hidden" name="role" value="reviewer" />
+              <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Claim Statement -->
+        <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4">
+          <span class="text-[10px] uppercase font-mono text-slate-400 block mb-1">Approved Statement</span>
+          <p class="text-sm font-medium text-slate-100">"{{ c.claim_statement }}"</p>
+        </div>
+
+        <!-- Evidence Reference & Dates Footer -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-400 pt-1">
+          <div>
+            <span class="text-[10px] uppercase text-slate-500 block">Supporting Evidence / Citation</span>
+            <span class="text-slate-300 font-mono">{{ c.source_reference }}</span>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase text-slate-500 block">Verified Sign-Off</span>
+            <span class="text-slate-300">{{ c.verified_by }}</span>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase text-slate-500 block">Review & Expiration Dates</span>
+            <span class="text-slate-300">
+              Reviewed: {{ c.review_date if c.review_date else 'N/A' }} 
+              {% if c.expiration_date %}• Valid until: {{ c.expiration_date }}{% endif %}
+            </span>
+          </div>
+        </div>
+
+        {% if c.notes %}
+        <p class="text-[11px] text-amber-300/80 bg-amber-500/5 border border-amber-500/10 p-2.5 rounded-lg">
+          <strong>Usage Constraint:</strong> {{ c.notes }}
+        </p>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
+        <i data-lucide="badge-percent" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
+        <p class="text-sm font-medium text-white">No approved claims found.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ========================================================= -->
+  <!-- TAB 5: BRAND ASSETS & REFERENCES -->
+  <!-- ========================================================= -->
+  {% if current_memory_tab == 'assets' %}
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    {% for a in asset_refs %}
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+            {{ a.category }}
+          </span>
+          {% if is_reviewer %}
+          <form action="/brand-memory/assets/{{ a.id }}/delete" method="POST" onsubmit="return confirm('Delete this asset reference?');">
+            <input type="hidden" name="role" value="reviewer" />
+            <button type="submit" class="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+
+        <h3 class="text-base font-semibold text-white mb-1">{{ a.name }}</h3>
+        
+        <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 space-y-2">
+          <p class="leading-relaxed">{{ a.usage_guidelines }}</p>
+          {% if a.attribution_text %}
+            <p class="text-[11px] text-slate-400 pt-1 border-t border-slate-800/80 italic">"{{ a.attribution_text }}"</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+        <span class="font-mono truncate">{{ a.file_reference if a.file_reference else 'Asset spec' }}</span>
+        <span class="text-emerald-400 font-semibold">Active</span>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-span-3 bg-slate-900/80 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
+      <i data-lucide="image" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
+      <p class="text-sm font-medium text-white">No brand assets registered.</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ========================================================= -->
+  <!-- MODAL: ADD VOICE GUIDELINE -->
+  <!-- ========================================================= -->
+  <div x-show="showVoiceModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div @click.away="showVoiceModal = false" class="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-semibold text-white">Add Brand Voice Guideline</h3>
+        <button @click="showVoiceModal = false" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form action="/brand-memory/voice/add" method="POST" class="space-y-3 text-xs">
+        <input type="hidden" name="role" value="{{ 'reviewer' if is_reviewer else 'creator' }}" />
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Guideline Title *</label>
+          <input type="text" name="title" required placeholder="e.g., Executive Social Media Voice" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Target Audience</label>
+          <input type="text" name="audience" placeholder="e.g., Enterprise CISO & IT Directors" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Core Tone Attributes (Comma-separated) *</label>
+          <input type="text" name="tone_attributes" required placeholder="e.g., Authoritative, Transparent, Grounded" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Recommended Principles (DO) *</label>
+          <textarea name="dos_principles" required rows="3" placeholder="• Cite verified benchmarks&#10;• Use active voice" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></textarea>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Forbidden Principles (DON'T) *</label>
+          <textarea name="donts_principles" required rows="3" placeholder="• Never guarantee absolute zero risk&#10;• Avoid hyperbolic superlatives" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Approved Example</label>
+            <input type="text" name="example_positive" placeholder="Positive excerpt" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Forbidden Example</label>
+            <input type="text" name="example_negative" placeholder="Negative excerpt" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+          <button type="button" @click="showVoiceModal = false" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-xl">Save Guideline</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: ADD TERMINOLOGY RULE -->
+  <!-- ========================================================= -->
+  <div x-show="showTermModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div @click.away="showTermModal = false" class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-semibold text-white">Add Terminology Rule</h3>
+        <button @click="showTermModal = false" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form action="/brand-memory/terms/add" method="POST" class="space-y-3 text-xs">
+        <input type="hidden" name="role" value="{{ 'reviewer' if is_reviewer else 'creator' }}" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Term or Phrasing *</label>
+            <input type="text" name="term" required placeholder="e.g., 100% bug free" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Rule Classification *</label>
+            <select name="term_type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
+              <option value="prohibited">Prohibited (Violation)</option>
+              <option value="approved">Approved Standard</option>
+              <option value="conditional">Conditional Phrasing</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Suggested Replacement Phrasing</label>
+          <input type="text" name="replacement_term" placeholder="e.g., rigorously tested with 99.9% uptime" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Category</label>
+            <input type="text" name="category" placeholder="e.g., Legal, Technical, Marketing" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Severity Flag</label>
+            <select name="severity" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
+              <option value="critical">Critical (Blocks Release)</option>
+              <option value="warning">Warning (Correction Needed)</option>
+              <option value="info">Info / Best Practice</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Policy Rationale / Reason *</label>
+          <textarea name="reason" required rows="2" placeholder="Explain why this rule exists and cite legal policy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></textarea>
+        </div>
+        <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+          <button type="button" @click="showTermModal = false" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-xl">Register Term</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: ADD PRODUCT FACT -->
+  <!-- ========================================================= -->
+  <div x-show="showFactModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div @click.away="showFactModal = false" class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-semibold text-white">Add Verified Product Fact</h3>
+        <button @click="showFactModal = false" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form action="/brand-memory/facts/add" method="POST" class="space-y-3 text-xs">
+        <input type="hidden" name="role" value="{{ 'reviewer' if is_reviewer else 'creator' }}" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Product Name *</label>
+            <input type="text" name="product_name" required placeholder="e.g., BrandShield Core" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Category</label>
+            <input type="text" name="category" placeholder="e.g., Security, Performance, Cloud" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Feature / Capability Name *</label>
+          <input type="text" name="feature_name" required placeholder="e.g., Ephemeral In-Memory Vector Search" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Verified Specification Detail *</label>
+          <textarea name="specification_detail" required rows="3" placeholder="Provide accurate, audited facts and exact metrics..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Verified Source Documentation *</label>
+            <input type="text" name="verified_source" required placeholder="e.g., Lab Report #882 / SOC2 Sec 4" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Confidentiality Level</label>
+            <select name="confidentiality" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
+              <option value="internal">Internal Only</option>
+              <option value="public">Public</option>
+              <option value="confidential">Confidential / Restricted</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+          <button type="button" @click="showFactModal = false" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-xl">Save Product Fact</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: ADD CLAIM (WITH EVIDENCE REQUIREMENTS) -->
+  <!-- ========================================================= -->
+  <div x-show="showClaimModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div @click.away="showClaimModal = false" class="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-semibold text-white">
+            {% if is_reviewer %}Add Verified Claim & Evidence{% else %}Propose Claim for Legal Verification{% endif %}
+          </h3>
+          <p class="text-[11px] text-slate-400">All marketing claims must cite supporting evidentiary documentation.</p>
+        </div>
+        <button @click="showClaimModal = false" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form action="/brand-memory/claims/add" method="POST" class="space-y-3 text-xs">
+        <input type="hidden" name="role" value="{{ 'reviewer' if is_reviewer else 'creator' }}" />
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Claim Topic / Category *</label>
+          <input type="text" name="topic" required placeholder="e.g., High Availability, Latency Reduction, Security" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Exact Approved Claim Statement *</label>
+          <textarea name="claim_statement" required rows="2" placeholder="e.g., Delivers 99.99% verified uptime across global multi-region clusters." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Evidence Type *</label>
+            <input type="text" name="evidence_type" required placeholder="e.g., SOC2 Type II, Clinical Trial, Lab Test" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Source Reference / Citation *</label>
+            <input type="text" name="source_reference" required placeholder="e.g., Ernst & Young Audit Q3 2026, Sec 4.2" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Review Date</label>
+            <input type="date" name="review_date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Expiration Date (Optional)</label>
+            <input type="date" name="expiration_date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Usage Constraints / Mandatory Disclaimers</label>
+          <input type="text" name="notes" placeholder="e.g., Requires explicit asterisk footnote to audit report" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+        </div>
+        <div class="flex items-center space-x-2 pt-1">
+          <input type="checkbox" name="is_confidential" value="true" id="claim_confidential" class="rounded bg-slate-950 border-slate-800 text-indigo-600 focus:ring-indigo-500" />
+          <label for="claim_confidential" class="text-slate-300">Confidential Evidence (Internal Governance Eyes Only)</label>
+        </div>
+        <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+          <button type="button" @click="showClaimModal = false" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-xl">
+            {% if is_reviewer %}Save Verified Claim{% else %}Submit for Verification{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: ADD BRAND ASSET REF -->
+  <!-- ========================================================= -->
+  <div x-show="showAssetModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div @click.away="showAssetModal = false" class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-semibold text-white">Add Brand Asset Reference</h3>
+        <button @click="showAssetModal = false" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form action="/brand-memory/assets/add" method="POST" class="space-y-3 text-xs">
+        <input type="hidden" name="role" value="{{ 'reviewer' if is_reviewer else 'creator' }}" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Asset Name *</label>
+            <input type="text" name="name" required placeholder="e.g., Primary Horizontal Wordmark" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Asset Category</label>
+            <select name="category" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
+              <option value="Logo">Logo</option>
+              <option value="Seal & Trust Mark">Seal & Trust Mark</option>
+              <option value="Boilerplate">Boilerplate</option>
+              <option value="Trademark">Trademark</option>
+              <option value="Typography">Typography</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Usage Guidelines *</label>
+          <textarea name="usage_guidelines" required rows="3" placeholder="Clear space requirements, background colors, minimum dimensions..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></textarea>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Mandatory Attribution / Legal Notice</label>
+          <input type="text" name="attribution_text" placeholder="e.g., Registered Trademark of Codex 48 Technologies" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">File Reference / URL</label>
+          <input type="text" name="file_reference" placeholder="/static/brand/logo.svg" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100" />
+        </div>
+        <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+          <button type="button" @click="showAssetModal = false" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-xl">Save Asset Reference</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
